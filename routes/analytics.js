@@ -4,23 +4,47 @@ const { getResidentialPrices } = require('../services/estateintel');
 
 const router = express.Router();
 
-// @desc    Get average price by city
+// @desc    Get average price by city (optionally enhanced with market data)
 // @route   GET /api/analytics/avg-price-by-city
 // @access  Public
 router.get('/avg-price-by-city', async (req, res) => {
   try {
-    const data = await Property.aggregate([
+    const { enhanced = false, city, type = 'sale', beds = 3 } = req.query;
+    let data = await Property.aggregate([
       {
         $group: {
           _id: '$location.city',
-          avgPrice: { $avg: '$price' },
+          localAvgPrice: { $avg: '$price' },
           count: { $sum: 1 },
         },
       },
       {
-        $sort: { avgPrice: -1 },
+        $sort: { localAvgPrice: -1 },
       },
     ]);
+
+    if (enhanced === 'true' && city) {
+      try {
+        const locationSlug = city.toLowerCase() === 'lagos' ? 'lagos-ikeja' : `${city.toLowerCase()}-central`;
+        const marketData = await getResidentialPrices(locationSlug, type, beds);
+        const cityData = data.find(d => d._id.toLowerCase() === city.toLowerCase());
+        if (cityData) {
+          cityData.marketAvgPrice = marketData.average_price;
+          cityData.enhancedAvgPrice = (cityData.localAvgPrice + marketData.average_price) / 2;
+        } else {
+          data.push({
+            _id: city,
+            localAvgPrice: null,
+            count: 0,
+            marketAvgPrice: marketData.average_price,
+            enhancedAvgPrice: marketData.average_price,
+          });
+        }
+      } catch (marketError) {
+        console.warn(`Market data unavailable for ${city}:`, marketError.message);
+      }
+    }
+
     res.json(data);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -117,53 +141,6 @@ router.get('/market-prices', async (req, res) => {
   }
 });
 
-// @desc    Get enhanced average price by city (local + market data fallback)
-// @route   GET /api/analytics/avg-price-by-city
-// @access  Public
-router.get('/avg-price-by-city', async (req, res) => {
-  try {
-    const { city, type = 'sale', beds = 3 } = req.query;
-    let data = await Property.aggregate([
-      {
-        $group: {
-          _id: '$location.city',
-          localAvgPrice: { $avg: '$price' },
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $sort: { localAvgPrice: -1 },
-      },
-    ]);
-
-    // If specific city provided, try to fetch external market price as fallback/enhancement
-    if (city) {
-      try {
-        // Assume a default neighborhood for the city, e.g., for 'Lagos' use 'lagos-ikeja'
-        const locationSlug = city.toLowerCase() === 'lagos' ? 'lagos-ikeja' : `${city.toLowerCase()}-central`; // Simple mapping; improve as needed
-        const marketData = await getResidentialPrices(locationSlug, type, beds);
-        const cityData = data.find(d => d._id.toLowerCase() === city.toLowerCase());
-        if (cityData) {
-          cityData.marketAvgPrice = marketData.average_price;
-          cityData.enhancedAvgPrice = (cityData.localAvgPrice + marketData.average_price) / 2;
-        } else {
-          data.push({
-            _id: city,
-            localAvgPrice: null,
-            count: 0,
-            marketAvgPrice: marketData.average_price,
-            enhancedAvgPrice: marketData.average_price,
-          });
-        }
-      } catch (marketError) {
-        console.warn(`Market data unavailable for ${city}:`, marketError.message);
-      }
-    }
-
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+// (Removed duplicate enhanced avg-price-by-city route; use /avg-price-by-city with ?enhanced=true&city=CityName)
 
 module.exports = router;

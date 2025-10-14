@@ -52,7 +52,7 @@ router.delete('/users/:id', protect, admin, async (req, res) => {
     const user = await User.findById(req.params.id);
 
     if (user) {
-      await user.remove();
+      await User.deleteOne({ _id: user._id });
       res.json({ message: 'User removed' });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -114,7 +114,7 @@ router.delete('/properties/:id', protect, admin, async (req, res) => {
     const property = await Property.findById(req.params.id);
 
     if (property) {
-      await property.remove();
+      await Property.deleteOne({ _id: property._id });
       res.json({ message: 'Property removed' });
     } else {
       res.status(404).json({ message: 'Property not found' });

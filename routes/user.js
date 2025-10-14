@@ -59,7 +59,7 @@ router.delete('/properties/:id', protect, async (req, res) => {
     const property = await Property.findOne({ _id: req.params.id, user: req.user._id });
 
     if (property) {
-      await property.remove();
+      await Property.deleteOne({ _id: property._id });
       res.json({ message: 'Property removed' });
     } else {
       res.status(404).json({ message: 'Property not found' });

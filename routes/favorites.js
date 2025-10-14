@@ -51,7 +51,7 @@ router.delete('/:id', protect, async (req, res) => {
     const favorite = await Favorite.findOne({ _id: req.params.id, user: req.user._id });
 
     if (favorite) {
-      await favorite.remove();
+      await favorite.deleteOne();
       res.json({ message: 'Favorite removed' });
     } else {
       res.status(404).json({ message: 'Favorite not found' });

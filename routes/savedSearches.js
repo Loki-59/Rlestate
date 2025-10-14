@@ -65,7 +65,7 @@ router.delete('/:id', protect, async (req, res) => {
     const savedSearch = await SavedSearch.findOne({ _id: req.params.id, user: req.user._id });
 
     if (savedSearch) {
-      await savedSearch.remove();
+      await SavedSearch.deleteOne({ _id: savedSearch._id });
       res.json({ message: 'Saved search removed' });
     } else {
       res.status(404).json({ message: 'Saved search not found' });

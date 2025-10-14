@@ -1,6 +1,6 @@
-       const express = require('express');
-const Testimonial = require('../models/Testimonial');
-const { protect } = require('../middleware/auth');
+const express = require('express');
+const Testimonial = require('../models/Testimonial.js');
+const { protect } = require('../middleware/auth.js');
 
 const router = express.Router();
 
@@ -68,7 +68,7 @@ router.delete('/:id', protect, async (req, res) => {
     const testimonial = await Testimonial.findById(req.params.id);
 
     if (testimonial) {
-      await testimonial.remove();
+      await testimonial.deleteOne();
       res.json({ message: 'Testimonial removed' });
     } else {
       res.status(404).json({ message: 'Testimonial not found' });
