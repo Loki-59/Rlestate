@@ -4,7 +4,7 @@ require('dotenv').config();
 
 async function createAdmin() {
   try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/real-estate-app');
+    await mongoose.connect(process.env.MONGO_URI || 'mongodb+srv://Juicebokx:n4omijoel@carz.raspx.mongodb.net/?retryWrites=true&');
 
     const adminExists = await User.findOne({ email: 'admin@homescapers.com' });
     if (adminExists) {
