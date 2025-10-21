@@ -10,7 +10,7 @@ connectDB();
 const app = express();
 
 app.use(cors({
-  origin: true,
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'https://real-estate-app-backend.onrender.com'],
   credentials: true
 }));
 app.use(express.json());
